@@ -1,0 +1,74 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: dnsrewrites.dns-essence.io
+  annotations:
+    controller-gen.kubebuilder.io/version: manual
+spec:
+  group: dns-essence.io
+  names:
+    kind: DNSRewrite
+    listKind: DNSRewriteList
+    plural: dnsrewrites
+    singular: dnsrewrite
+  scope: Cluster
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      additionalPrinterColumns:
+        - name: Host
+          type: string
+          jsonPath: .spec.host
+        - name: Target
+          type: string
+          jsonPath: .spec.target
+        - name: Enabled
+          type: boolean
+          jsonPath: .spec.enabled
+        - name: Applied
+          type: boolean
+          jsonPath: .status.applied
+      schema:
+        openAPIV3Schema:
+          description: DNSRewrite is the Schema for the dnsrewrites API.
+          type: object
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: DNSRewriteSpec defines the desired state of a DNS rewrite rule.
+              type: object
+              required:
+                - host
+                - target
+                - enabled
+              properties:
+                host:
+                  description: Host is the public FQDN to rewrite.
+                  type: string
+                  minLength: 1
+                target:
+                  description: Target is the in-cluster Kubernetes FQDN.
+                  type: string
+                  minLength: 1
+                enabled:
+                  description: Enabled controls whether this rule is active in CoreDNS.
+                  type: boolean
+            status:
+              description: DNSRewriteStatus reflects the observed state after reconciliation.
+              type: object
+              properties:
+                applied:
+                  description: Applied is true when the rule has been written to CoreDNS.
+                  type: boolean
+                error:
+                  description: Error holds the last reconciliation error, if any.
+                  type: string
+      subresources:
+        status: {}

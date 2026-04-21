@@ -1,0 +1,15 @@
+# Build output
+/manager
+
+# Go
+*.test
+*.out
+vendor/
+
+# Backup files
+coredns-backup.yaml
+
+# Editor
+.idea/
+.vscode/
+*.swp

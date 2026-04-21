@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DN-essence</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>DN-essence</h1>
+    <p class="subtitle">DNS rewrite rules for CoreDNS</p>
+    <button id="btn-add" class="btn btn-primary">+ Add rule</button>
+  </header>
+
+  <main>
+    <table id="rules-table">
+      <thead>
+        <tr>
+          <th>Host</th>
+          <th>Target</th>
+          <th>Status</th>
+          <th>Applied</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="rules-body">
+        <tr id="empty-row">
+          <td colspan="5" class="empty">No rules yet. Add one above.</td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal-overlay" class="hidden">
+    <div id="modal">
+      <h2 id="modal-title">Add rule</h2>
+      <form id="rule-form" novalidate>
+        <input type="hidden" id="field-name-original" />
+
+        <label for="field-name">Name <span class="req">*</span></label>
+        <input id="field-name" type="text" placeholder="my-api-rule" required />
+        <span class="field-error" id="err-name"></span>
+
+        <label for="field-host">Host (FQDN) <span class="req">*</span></label>
+        <input id="field-host" type="text" placeholder="api.example.com" required />
+        <span class="field-error" id="err-host"></span>
+
+        <label for="field-target">Target (svc.cluster.local) <span class="req">*</span></label>
+        <input id="field-target" type="text" placeholder="my-svc.default.svc.cluster.local" required />
+        <span class="field-error" id="err-target"></span>
+
+        <label class="checkbox-label">
+          <input id="field-enabled" type="checkbox" checked />
+          Enabled
+        </label>
+
+        <div class="modal-actions">
+          <button type="button" id="btn-cancel" class="btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

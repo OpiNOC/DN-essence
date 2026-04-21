@@ -1,0 +1,65 @@
+---
+# ClusterRole: read/write DNSRewrite CRDs (cluster-scoped)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "dn-essence.fullname" . }}
+  labels:
+    {{- include "dn-essence.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["dns-essence.io"]
+    resources: ["dnsrewrites"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["dns-essence.io"]
+    resources: ["dnsrewrites/status"]
+    verbs: ["get", "update", "patch"]
+
+---
+# ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "dn-essence.fullname" . }}
+  labels:
+    {{- include "dn-essence.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "dn-essence.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "dn-essence.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+
+---
+# Role: patch the CoreDNS ConfigMap (namespace-scoped — kube-system)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "dn-essence.fullname" . }}-coredns
+  namespace: {{ .Values.coredns.namespace }}
+  labels:
+    {{- include "dn-essence.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["{{ .Values.coredns.configmap }}"]
+    verbs: ["get", "update", "patch"]
+
+---
+# RoleBinding for the CoreDNS role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "dn-essence.fullname" . }}-coredns
+  namespace: {{ .Values.coredns.namespace }}
+  labels:
+    {{- include "dn-essence.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "dn-essence.fullname" . }}-coredns
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "dn-essence.fullname" . }}
+    namespace: {{ .Release.Namespace }}

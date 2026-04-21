@@ -1,0 +1,32 @@
+replicaCount: 1
+
+image:
+  repository: dn-essence
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# CoreDNS ConfigMap location — override per cluster if needed.
+coredns:
+  namespace: kube-system
+  configmap: coredns
+
+# HTTP port exposed by the API + UI server.
+httpPort: 8080
+# Health probe port (controller-runtime).
+healthPort: 8081
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
