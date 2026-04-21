@@ -78,7 +78,11 @@ jobs:
       - name: Log in to ghcr.io
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
 
+      - name: Lowercase owner
+        id: lower
+        run: echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Package and push chart
         run: |
           helm package deploy/helm/dn-essence
-          helm push dn-essence-*.tgz oci://ghcr.io/${{ github.repository_owner }}/helm-charts
+          helm push dn-essence-*.tgz oci://ghcr.io/${{ steps.lower.outputs.owner }}/helm-charts
