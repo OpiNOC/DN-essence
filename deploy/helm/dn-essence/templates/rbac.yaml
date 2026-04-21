@@ -41,6 +41,11 @@ metadata:
   labels:
     {{- include "dn-essence.labels" . | nindent 4 }}
 rules:
+  # list+watch are needed by controller-runtime cache; resourceNames cannot be used with these verbs
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["list", "watch"]
+  # get/update/patch are restricted to the CoreDNS ConfigMap only
   - apiGroups: [""]
     resources: ["configmaps"]
     resourceNames: ["{{ .Values.coredns.configmap }}"]
