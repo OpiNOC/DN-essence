@@ -53,16 +53,18 @@ The controller manages only a clearly delimited section of the Corefile, leaving
 ### From the OCI Helm chart (recommended)
 
 ```bash
-helm install dn-essence oci://ghcr.io/opinoc/helm-charts/dn-essence \
+helm upgrade --install dn-essence oci://ghcr.io/opinoc/helm-charts/dn-essence \
   --namespace dn-essence \
   --create-namespace
 ```
+
+> `upgrade --install` installs on first run and upgrades on subsequent runs — safe to re-run at any time.
 
 ### From source
 
 ```bash
 git clone https://github.com/OpiNOC/DN-essence.git
-helm install dn-essence ./DN-essence/deploy/helm/dn-essence \
+helm upgrade --install dn-essence ./DN-essence/deploy/helm/dn-essence \
   --namespace dn-essence \
   --create-namespace
 ```
