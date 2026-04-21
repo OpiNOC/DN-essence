@@ -10,7 +10,10 @@
   <header>
     <h1>DN-essence</h1>
     <p class="subtitle">DNS rewrite rules for CoreDNS</p>
-    <button id="btn-add" class="btn btn-primary">+ Add rule</button>
+    <div class="header-actions">
+      <button id="btn-help" class="btn" title="How to use">?</button>
+      <button id="btn-add" class="btn btn-primary">+ Add rule</button>
+    </div>
   </header>
 
   <main>
@@ -61,6 +64,83 @@
           <button type="submit" class="btn btn-primary" id="btn-save">Save</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Help modal -->
+  <div id="help-overlay" class="hidden">
+    <div id="help-modal">
+      <div class="help-header">
+        <h2>How to use DN-essence</h2>
+        <button id="btn-help-close" class="btn btn-sm">✕</button>
+      </div>
+      <div class="help-body">
+
+        <h3>What is DN-essence?</h3>
+        <p>DN-essence manages CoreDNS rewrite rules declaratively via Kubernetes custom resources (<code>DNSRewrite</code>). It solves the <strong>hairpin NAT</strong> problem: pods that need to reach a service by its public domain name instead of being routed outside the cluster and back in.</p>
+        <p>Every rule you create — whether from this UI or from <code>kubectl</code> — is stored as a <code>DNSRewrite</code> resource in Kubernetes. The controller watches those resources and keeps the CoreDNS ConfigMap in sync automatically.</p>
+
+        <h3>UI ↔ CLI: single source of truth</h3>
+        <p>Rules created from the UI are immediately visible via <code>kubectl</code>, and vice versa. There is no separate database — the Kubernetes API is the only source of truth.</p>
+
+        <h3>Managing rules via kubectl</h3>
+
+        <h4>Create a rule</h4>
+        <pre><code>kubectl apply -f - &lt;&lt;EOF
+apiVersion: dns-essence.io/v1
+kind: DNSRewrite
+metadata:
+  name: my-app
+spec:
+  host: myapp.example.com
+  target: myapp.default.svc.cluster.local
+  enabled: true
+EOF</code></pre>
+
+        <h4>List all rules</h4>
+        <pre><code>kubectl get dnsrewrites</code></pre>
+
+        <h4>Inspect a rule</h4>
+        <pre><code>kubectl get dnsrewrite my-app -o yaml</code></pre>
+
+        <h4>Disable a rule (without deleting it)</h4>
+        <pre><code>kubectl patch dnsrewrite my-app \
+  --type merge -p '{"spec":{"enabled":false}}'</code></pre>
+
+        <h4>Delete a rule</h4>
+        <pre><code>kubectl delete dnsrewrite my-app</code></pre>
+
+        <h3>Field reference</h3>
+        <table class="help-table">
+          <thead><tr><th>Field</th><th>Description</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td><code>metadata.name</code></td><td>Unique identifier for the rule (Kubernetes name)</td><td><code>my-app</code></td></tr>
+            <tr><td><code>spec.host</code></td><td>Public FQDN to rewrite</td><td><code>myapp.example.com</code></td></tr>
+            <tr><td><code>spec.target</code></td><td>In-cluster Kubernetes service FQDN</td><td><code>myapp.default.svc.cluster.local</code></td></tr>
+            <tr><td><code>spec.enabled</code></td><td>Whether the rule is active in CoreDNS</td><td><code>true</code> / <code>false</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Status fields (read-only)</h3>
+        <table class="help-table">
+          <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><code>status.applied</code></td><td><code>true</code> when the rule has been written to the CoreDNS ConfigMap</td></tr>
+            <tr><td><code>status.error</code></td><td>Last reconciliation error, if any</td></tr>
+          </tbody>
+        </table>
+
+        <h3>How the CoreDNS ConfigMap is managed</h3>
+        <p>DN-essence only manages a clearly delimited section of the Corefile, marked with comments. Everything outside that section is never touched.</p>
+        <pre><code>.:53 {
+    # ... your existing CoreDNS config (untouched) ...
+
+    # BEGIN dn-essence
+    rewrite name myapp.example.com myapp.default.svc.cluster.local
+    # END dn-essence
+}</code></pre>
+
+      </div>
     </div>
   </div>
 

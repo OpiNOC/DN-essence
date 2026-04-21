@@ -292,5 +292,12 @@ document.getElementById('rules-body').addEventListener('click', async e => {
   }
 });
 
+// ── Help modal ────────────────────────────────────────────────────────────────
+
+const helpOverlay = document.getElementById('help-overlay');
+document.getElementById('btn-help').addEventListener('click', () => helpOverlay.classList.remove('hidden'));
+document.getElementById('btn-help-close').addEventListener('click', () => helpOverlay.classList.add('hidden'));
+helpOverlay.addEventListener('click', e => { if (e.target === helpOverlay) helpOverlay.classList.add('hidden'); });
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 loadRules();
