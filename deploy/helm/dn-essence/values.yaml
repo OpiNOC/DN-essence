@@ -11,7 +11,7 @@ coredns:
   configmap: coredns
 
 # HTTP port exposed by the API + UI server.
-httpPort: 8080
+httpPort: 9090
 # Health probe port (controller-runtime).
 healthPort: 8081
 

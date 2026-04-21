@@ -64,7 +64,7 @@ func main() {
 		}
 		mux.Handle("/", http.FileServer(http.FS(uiRoot)))
 
-		addr := getEnv("HTTP_ADDR", ":8080")
+		addr := getEnv("HTTP_ADDR", ":9090")
 		logger.Info("starting HTTP server", "addr", addr)
 		if err := http.ListenAndServe(addr, mux); err != nil {
 			logger.Error(err, "HTTP server failed")
