@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"io/fs"
 	"net/http"
 	"os"
@@ -9,6 +8,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -23,6 +24,8 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 	logger := ctrl.Log.WithName("main")
 
+	coreDNSNamespace := getEnv("COREDNS_NAMESPACE", "kube-system")
+
 	scheme := runtime.NewScheme()
 	_ = dnsv1.AddToScheme(scheme)
 	_ = corev1.AddToScheme(scheme)
@@ -31,6 +34,17 @@ func main() {
 		Scheme:                 scheme,
 		HealthProbeBindAddress: getEnv("HEALTH_ADDR", ":8081"),
 		LeaderElection:         false,
+		// Restrict ConfigMap cache to the CoreDNS namespace only —
+		// the ServiceAccount has no list permission at cluster scope.
+		Cache: cache.Options{
+			ByObject: map[client.Object]cache.ByObject{
+				&corev1.ConfigMap{}: {
+					Namespaces: map[string]cache.Config{
+						coreDNSNamespace: {},
+					},
+				},
+			},
+		},
 	})
 	if err != nil {
 		logger.Error(err, "failed to create manager")
@@ -39,7 +53,7 @@ func main() {
 
 	if err := (&controller.DNSRewriteReconciler{
 		Client:           mgr.GetClient(),
-		CoreDNSNamespace: getEnv("COREDNS_NAMESPACE", "kube-system"),
+		CoreDNSNamespace: coreDNSNamespace,
 		CoreDNSCMName:    getEnv("COREDNS_CONFIGMAP", "coredns"),
 	}).SetupWithManager(mgr); err != nil {
 		logger.Error(err, "failed to setup controller")
@@ -85,6 +99,3 @@ func getEnv(key, fallback string) string {
 	}
 	return fallback
 }
-
-// Ensure context is imported even if unused by manager signal handler.
-var _ = context.Background

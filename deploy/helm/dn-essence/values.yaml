@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: dn-essence
   tag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 # CoreDNS ConfigMap location — override per cluster if needed.
 coredns:
