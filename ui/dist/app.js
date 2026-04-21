@@ -42,6 +42,42 @@ function showToast(msg, isError = false) {
   toastTimer = setTimeout(() => el.classList.add('hidden'), 3000);
 }
 
+// ── Polling ───────────────────────────────────────────────────────────────────
+
+// After a write operation, poll until no rule is pending (or timeout).
+// While pending rules exist, re-render the table each tick so the user
+// sees the badge flip from "pending" → "applied" in real time.
+const POLL_INTERVAL_MS = 1500;
+const POLL_TIMEOUT_MS  = 30000;
+
+let pollTimer = null;
+
+function stopPolling() {
+  if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+}
+
+function startPolling() {
+  stopPolling();
+  const deadline = Date.now() + POLL_TIMEOUT_MS;
+
+  async function tick() {
+    try {
+      const rules = await fetchAll();
+      renderTable(rules);
+      const hasPending = rules.some(r => !r.applied && !r.error);
+      if (hasPending && Date.now() < deadline) {
+        pollTimer = setTimeout(tick, POLL_INTERVAL_MS);
+      } else {
+        pollTimer = null;
+      }
+    } catch {
+      pollTimer = null;
+    }
+  }
+
+  pollTimer = setTimeout(tick, POLL_INTERVAL_MS);
+}
+
 // ── Table rendering ───────────────────────────────────────────────────────────
 
 function renderTable(rules) {
@@ -66,7 +102,7 @@ function renderTable(rules) {
     } else if (rule.applied) {
       appliedBadge = '<span class="badge badge-ok">applied</span>';
     } else {
-      appliedBadge = '<span class="badge badge-pending">pending</span>';
+      appliedBadge = '<span class="badge badge-pending">⟳ pending</span>';
     }
 
     tr.innerHTML = `
@@ -112,13 +148,13 @@ async function loadRules() {
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
-const overlay  = document.getElementById('modal-overlay');
-const form     = document.getElementById('rule-form');
-const fName    = document.getElementById('field-name');
-const fNameOrig= document.getElementById('field-name-original');
-const fHost    = document.getElementById('field-host');
-const fTarget  = document.getElementById('field-target');
-const fEnabled = document.getElementById('field-enabled');
+const overlay   = document.getElementById('modal-overlay');
+const form      = document.getElementById('rule-form');
+const fName     = document.getElementById('field-name');
+const fNameOrig = document.getElementById('field-name-original');
+const fHost     = document.getElementById('field-host');
+const fTarget   = document.getElementById('field-target');
+const fEnabled  = document.getElementById('field-enabled');
 const modalTitle = document.getElementById('modal-title');
 
 function openModal(rule = null) {
@@ -126,15 +162,15 @@ function openModal(rule = null) {
   clearErrors();
   if (rule) {
     modalTitle.textContent = 'Edit rule';
-    fName.value    = rule.name;
-    fName.disabled = true;
+    fName.value     = rule.name;
+    fName.disabled  = true;
     fNameOrig.value = rule.name;
-    fHost.value    = rule.host;
-    fTarget.value  = rule.target;
+    fHost.value     = rule.host;
+    fTarget.value   = rule.target;
     fEnabled.checked = rule.enabled;
   } else {
     modalTitle.textContent = 'Add rule';
-    fName.disabled = false;
+    fName.disabled  = false;
     fNameOrig.value = '';
   }
   overlay.classList.remove('hidden');
@@ -160,8 +196,8 @@ function setError(field, msg) {
 function validateForm() {
   clearErrors();
   let ok = true;
-  const name = fName.value.trim();
-  const host = fHost.value.trim();
+  const name   = fName.value.trim();
+  const host   = fHost.value.trim();
   const target = fTarget.value.trim();
 
   if (!fName.disabled) {
@@ -205,6 +241,7 @@ form.addEventListener('submit', async e => {
     }
     closeModal();
     await loadRules();
+    startPolling();
   } catch (err) {
     showToast(err.message, true);
   }
@@ -224,6 +261,7 @@ document.getElementById('rules-body').addEventListener('click', async e => {
       await deleteRule(name);
       showToast('Rule deleted');
       await loadRules();
+      startPolling();
     } catch (err) {
       showToast(err.message, true);
     }
@@ -247,6 +285,7 @@ document.getElementById('rules-body').addEventListener('click', async e => {
       });
       showToast(`Rule ${btn.dataset.enabled === 'true' ? 'disabled' : 'enabled'}`);
       await loadRules();
+      startPolling();
     } catch (err) {
       showToast(err.message, true);
     }
